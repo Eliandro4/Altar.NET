@@ -80,7 +80,7 @@ namespace Altar
         /// <param name="value"></param>
         /// <returns></returns>
         public static bool TryParseEnum<TEnum>(string toParse, bool ignoreCase, bool allowNumber, bool parseFlags, ref TEnum value)
-            where TEnum : struct, IConvertible
+            where TEnum : struct, Enum
         {
             var t = typeof(TEnum);
             if (!t.IsEnum)
