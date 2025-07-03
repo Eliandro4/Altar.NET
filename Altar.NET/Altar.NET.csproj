@@ -8,6 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefineConstants>TRACE</DefineConstants>
     <Platforms>AnyCPU</Platforms>
+    <PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
@@ -20,16 +21,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="1.9.71" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.0-preview.5.25277.114" />
     <ProjectReference Include="..\Altar.NET.Util\Altar.NET.Util.csproj" />
     <PackageReference Include="runtime.osx.10.10-x64.CoreCompat.System.Drawing" Version="6.0.5.128" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="CommandLine">
-      <HintPath>..\References\CommandLine.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
   </ItemGroup>
 
   <ItemGroup>
