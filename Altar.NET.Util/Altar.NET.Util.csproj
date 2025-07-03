@@ -5,36 +5,9 @@
     <RootNamespace>Altar</RootNamespace>
     <AssemblyName>Altar.NET.Util</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Win32Resource>ILHacks.res</Win32Resource>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="ILHacks.cs" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Include="ILHacks.il" />
-    <None Include="ILHacks.res" />
-  </ItemGroup>
-
-  <!-- Task de build de IL -->
-  <Target Name="BuildIL" BeforeTargets="CoreCompile" Condition="Exists('ILHacks.il')">
-    <PropertyGroup>
-      <FrameworkPathOverride Condition="'$(OS)' != 'Unix'">$([MSBuild]::GetRegistryValue(`HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full`, `InstallPath`, null))</FrameworkPathOverride>
-      <ILAsmExe Condition="'$(OS)' == 'Unix'">ilasm</ILAsmExe>
-      <ILAsmExe Condition="'$(OS)' != 'Unix'">"$(FrameworkPathOverride)ilasm.exe"</ILAsmExe>
-      <ILAsmArgs>/nologo /quiet /dll /output:$(TargetPath)_IL</ILAsmArgs>
-      <ILAsmArgs Condition="'$(DebugType)' == 'full'">$(ILAsmArgs) /debug</ILAsmArgs>
-      <ILAsmArgs Condition="'$(DebugType)' == 'pdbonly' and '$(OS)' != 'Unix'">$(ILAsmArgs) /pdb</ILAsmArgs>
-      <ILAsmArgs Condition="Exists('$(Win32Resource)')">$(ILAsmArgs) /resource:"$(Win32Resource)"</ILAsmArgs>
-    </PropertyGroup>
-
-    <Exec Command='$(ILAsmExe) $(ILAsmArgs) "ILHacks.il"' />
-  </Target>
-
-  <!-- Substitui o IL gerado no final -->
-  <Target Name="ReplaceWithIL" AfterTargets="Build" Condition="Exists('$(TargetPath)_IL')">
-    <Copy SourceFiles="$(TargetPath)_IL" DestinationFiles="$(TargetPath)" />
-    <Delete Files="$(TargetPath)_IL" />
-  </Target>
 </Project>
