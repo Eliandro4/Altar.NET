@@ -1,130 +1,40 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{A5A66BEE-A24B-40D7-8F72-BB3AC53A8E67}</ProjectGuid>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Altar</RootNamespace>
     <AssemblyName>Altar.NET.Util</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup>
     <Win32Resource>ILHacks.res</Win32Resource>
   </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Xml" />
+    <None Include="ILHacks.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="ILHacks.cs" />
-    <!-- to keep VS quiet -->
-  </ItemGroup>
+
   <ItemGroup>
     <None Include="ILHacks.il" />
     <None Include="ILHacks.res" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- hack to embed IL code -->
-  <PropertyGroup>
-    <CompileDependsOn>
-      HideILFromCompile;
-      $(CompileDependsOn);
-      CoreCompileIL;
-    </CompileDependsOn>
-  </PropertyGroup>
-  <Target Name="HideILFromCompile">
-    <ItemGroup>
-      <ILSrc Include="@(None)" Condition="'%(Extension)'=='.il'" />
-      <None Remove="@(None)" Condition="'%(Extension)'=='.il'" />
-    </ItemGroup>
-  </Target>
-  <Target Name="CoreCompileIL" Inputs="@(ILSrc)" Outputs="$(TargetPath)_IL" Condition="'@(ILSrc)' != ''">
-    <GetFrameworkPath>
-      <Output TaskParameter="Path" PropertyName="FrameworkPath" />
-    </GetFrameworkPath>
 
-    <PropertyGroup Condition="'$(OS)' == 'Unix'">
-      <ILAsm>ilasm</ILAsm>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(OS)' != 'Unix'">
-      <ILAsm>"$(FrameworkPath)\ilasm.exe"</ILAsm>
-    </PropertyGroup>
-
+  <!-- Task de build de IL -->
+  <Target Name="BuildIL" BeforeTargets="CoreCompile" Condition="Exists('ILHacks.il')">
     <PropertyGroup>
-      <ILAsm>$(ILAsm) /nologo /quiet "/output:$(TargetPath)_IL"</ILAsm>
+      <FrameworkPathOverride Condition="'$(OS)' != 'Unix'">$([MSBuild]::GetRegistryValue(`HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full`, `InstallPath`, null))</FrameworkPathOverride>
+      <ILAsmExe Condition="'$(OS)' == 'Unix'">ilasm</ILAsmExe>
+      <ILAsmExe Condition="'$(OS)' != 'Unix'">"$(FrameworkPathOverride)ilasm.exe"</ILAsmExe>
+      <ILAsmArgs>/nologo /quiet /dll /output:$(TargetPath)_IL</ILAsmArgs>
+      <ILAsmArgs Condition="'$(DebugType)' == 'full'">$(ILAsmArgs) /debug</ILAsmArgs>
+      <ILAsmArgs Condition="'$(DebugType)' == 'pdbonly' and '$(OS)' != 'Unix'">$(ILAsmArgs) /pdb</ILAsmArgs>
+      <ILAsmArgs Condition="Exists('$(Win32Resource)')">$(ILAsmArgs) /resource:"$(Win32Resource)"</ILAsmArgs>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(FileAlignment)' != '' ">
-      <ILAsm>$(ILAsm) /alignment=$(FileAlignment)</ILAsm>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(BaseAddress)' != '' ">
-      <ILAsm>$(ILAsm) /base=$(BaseAddress)</ILAsm>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(OutputType)' == 'Library' ">
-      <ILAsm>$(ILAsm) /dll</ILAsm>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(DebugType)' == 'pdbonly' And '$(OS)' != 'Unix'"> <!-- not supported in mono ilasm -->
-      <ILAsm>$(ILAsm) /pdb</ILAsm>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(DebugType)' == 'full' ">
-      <ILAsm>$(ILAsm) /debug</ILAsm>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Optimize)' == 'true' And '$(OS)' != 'Unix'">
-      <ILAsm>$(ILAsm) /optimize</ILAsm>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Platform)' == 'x64' And '$(OS)' != 'Unix'">
-      <ILAsm>$(ILAsm) /pe64 /x64</ILAsm>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Platform)' == 'Itanium' And '$(OS)' != 'Unix'">
-      <ILAsm>$(ILAsm) /pe64 /itanium</ILAsm>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(AssemblyOriginatorKeyFile)' != '' ">
-      <ILAsm>$(ILAsm) /key:"$(AssemblyOriginatorKeyFile)"</ILAsm>
-    </PropertyGroup>
-    <PropertyGroup Condition=" Exists ( '$(Win32Resource)' ) ">
-      <ILAsm>$(ILAsm) /resource:"$(Win32Resource)"</ILAsm>
-    </PropertyGroup>
-    <Exec Command="$(ILAsm) @(ILSrc->'&quot;%(FullPath)&quot;', ' ')" />
-    <!--<ItemGroup>
-      <FileWrites Include="@(IntermediateAssembly->'%(RootDir)%(Directory)DesignTimeResolveAssemblyReferencesInput.cache', ' ')" />
-    </ItemGroup>-->
+
+    <Exec Command='$(ILAsmExe) $(ILAsmArgs) "ILHacks.il"' />
   </Target>
 
-  <PropertyGroup>
-    <PostBuildEvent Condition="'$(OS)' == 'Unix'">
-      cp "$(TargetPath)_IL" "$(TargetPath)"
-      rm "$(TargetPath)_IL"
-    </PostBuildEvent>
-    <PostBuildEvent Condition="'$(OS)' != 'Unix'">
-      copy "$(TargetPath)_IL" "$(TargetPath)"
-      del "$(TargetPath)_IL"
-    </PostBuildEvent>
-  </PropertyGroup>
+  <!-- Substitui o IL gerado no final -->
+  <Target Name="ReplaceWithIL" AfterTargets="Build" Condition="Exists('$(TargetPath)_IL')">
+    <Copy SourceFiles="$(TargetPath)_IL" DestinationFiles="$(TargetPath)" />
+    <Delete Files="$(TargetPath)_IL" />
+  </Target>
 </Project>
