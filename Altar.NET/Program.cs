@@ -3,17 +3,14 @@ using Altar.Recomp;
 using Altar.Repack;
 using Altar.Unpack;
 using CommandLine;
+using ImageMagick;
 using LitJson;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
-
-using GDIRectangle = System.Drawing.Rectangle;
 
 using static Altar.SR;
 
@@ -233,11 +230,11 @@ namespace Altar
 
                 #region TXTR
                 MemoryStream[] txtrStreams = null;
-                Bitmap      [] txtrBitmaps = null;
+                MagickImage[] txtrBitmaps = null;
                 if (eo.Texture && f.Textures != null)
                 {
                     txtrStreams = new MemoryStream[f.Textures.Length];
-                    txtrBitmaps = new Bitmap      [f.Textures.Length];
+                    txtrBitmaps = new MagickImage[f.Textures.Length];
                     WrAndGetC("Exporting texture sheets... ", out cl, out ct);
 
                     if (!Directory.Exists(od + DIR_TEX))
@@ -250,7 +247,7 @@ namespace Altar
 
                         using (var ms = new MemoryStream(f.Textures[i].PngData))
                         {
-                            txtrBitmaps[i] = new Bitmap(txtrStreams[i] = ms);
+                            txtrBitmaps[i] = new MagickImage(ms);
                         }
 
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Textures.Length + C_PAREN);
@@ -363,10 +360,10 @@ namespace Altar
                 }
                 #endregion
                 #region TPAG
-                Bitmap[] tpagBitmaps = null;
+                MagickImage[] tpagBitmaps = null;
                 if (eo.TPag && f.TexturePages != null)
                 {
-                    tpagBitmaps = new Bitmap[f.TexturePages.Length];
+                    tpagBitmaps = new MagickImage[f.TexturePages.Length];
                     WrAndGetC("Exporting texture maps... ", out cl, out ct);
 
                     if (!Directory.Exists(od + DIR_TXP))
@@ -380,13 +377,12 @@ namespace Altar
                         File.WriteAllText(od + DIR_TXP + i + EXT_JSON,
                                 JsonMapper.ToJson(Serialize.SerializeTPag(tpag)));
 
-                        var bc = txtrBitmaps[tpag.SpritesheetId]
-                                .Clone(new GDIRectangle(tpag.Source.X, tpag.Source.Y,
-                                        tpag.Source.Width, tpag.Source.Height),
-                                    PixelFormat.DontCare);
+                        var bc = (MagickImage)txtrBitmaps[tpag.SpritesheetId].Clone();
+                        bc.Crop(new MagickGeometry(tpag.Source.X, tpag.Source.Y,
+                                        tpag.Source.Width, tpag.Source.Height));
                         tpagBitmaps[i] = bc;
 
-                        if (eo.DumpTPagPNGs) bc.Save(od + DIR_TXP + i + EXT_PNG);
+                        if (eo.DumpTPagPNGs) bc.Write(od + DIR_TXP + i + EXT_PNG);
                     }
                     Console.WriteLine();
                     f.TexturePages.Clear();
@@ -410,7 +406,7 @@ namespace Altar
                         for (int j = 0; j < f.Sprites[i].TextureIndices.Length; ++j)
                         {
                             uint id = f.Sprites[i].TextureIndices[j];
-                            tpagBitmaps[id].Save(od + DIR_SPR + f.Sprites[i].Name + UNDERSCORE + j + EXT_PNG);
+                            tpagBitmaps[id].Write(od + DIR_SPR + f.Sprites[i].Name + UNDERSCORE + j + EXT_PNG);
                         }
                     }
                     Console.WriteLine();
@@ -592,8 +588,8 @@ namespace Altar
                 if (txtrStreams != null)
                     for (int i = 0; i < txtrStreams.Length; ++i)
                     {
-                        txtrBitmaps[i].Dispose();
-                        txtrStreams[i].Dispose();
+                        if (txtrBitmaps[i] != null) {txtrBitmaps[i].Dispose();}
+                        if (txtrStreams[i] != null) {txtrStreams[i].Dispose();}
                     }
             }
         }
