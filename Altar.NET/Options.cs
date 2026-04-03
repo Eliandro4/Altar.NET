@@ -1,253 +1,45 @@
-﻿using CommandLine;
-using CommandLine.Text;
-
 namespace Altar
 {
     public class ExportOptions
     {
-        // free short flags: lvxyz
-
-        [Option('g', HelpText = "Export manifest file.", MutuallyExclusiveSet = "EXPORT")]
-        public bool General
-        {
-            get;
-            set;
-        }
-        [Option('o', HelpText = "Export options.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Options
-        {
-            get;
-            set;
-        }
-        [Option('n', HelpText = "Export sound definitions (NOTE: this does NOT export the audio files themselves, use -a instead).", MutuallyExclusiveSet = "EXPORT")]
-        public bool Sound
-        {
-            get;
-            set;
-        }
-        [Option('s', HelpText = "Export sprite definitions (NOTE: this does NOT export the texture files themselves, use -t instead).", MutuallyExclusiveSet = "EXPORT")]
-        public bool Sprite
-        {
-            get;
-            set;
-        }
-        [Option('b', HelpText = "Export background definitions.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Background
-        {
-            get;
-            set;
-        }
-        [Option('p', HelpText = "Export path definitions.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Path
-        {
-            get;
-            set;
-        }
-        [Option('i', HelpText = "Export script definitions (NOTE: this does NOT export the decompiled or decompiled code, use -c or -d instead).", MutuallyExclusiveSet = "EXPORT")]
-        public bool Script
-        {
-            get;
-            set;
-        }
-        [Option('f', HelpText = "Export font definitions.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Font
-        {
-            get;
-            set;
-        }
-        [Option('j', HelpText = "Export object definitions.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Object
-        {
-            get;
-            set;
-        }
-        [Option('r', HelpText = "Export room definitions.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Room
-        {
-            get;
-            set;
-        }
-        [Option('m', HelpText = "Export texture maps (NOTE: does not contain the textures themselves, use -t instead).", MutuallyExclusiveSet = "EXPORT")]
-        public bool TPag
-        {
-            get;
-            set;
-        }
-        [Option('t', HelpText = "Export texture sheets.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Texture
-        {
-            get;
-            set;
-        }
-        [Option('a', HelpText = "Export audio files.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Audio
-        {
-            get;
-            set;
-        }
-        [Option('c', HelpText = "Decompile code.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Decompile
-        {
-            get;
-            set;
-        }
-        [Option('d', HelpText = "Disassemble code (NOTE: displays GM:S VMASM, NOT high-level code, use -c instead).", MutuallyExclusiveSet = "EXPORT")]
-        public bool Disassemble
-        {
-            get;
-            set;
-        }
-        [Option('u', HelpText = "Dump strings.", MutuallyExclusiveSet = "EXPORT")]
-        public bool String
-        {
-            get;
-            set;
-        }
-        [Option('w', HelpText = "Dump variable names.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Variables
-        {
-            get;
-            set;
-        }
-        [Option('h', HelpText = "Dump function names.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Functions
-        {
-            get;
-            set;
-        }
-        [Option('e', HelpText = "Dump audiogroups.", MutuallyExclusiveSet = "EXPORT")]
-        public bool AudioGroups
-        {
-            get;
-            set;
-        }
-        [Option("shaders", HelpText = "Export shader definitions.", MutuallyExclusiveSet = "EXPORT")]
-        public bool Shader
-        {
-            get;
-            set;
-        }
-        [Option('*', "any", HelpText = "Export everything (except -d, --dumpempty, --dumpall).", MutuallyExclusiveSet = "EXPORT")]
-        public bool Any
-        {
-            get;
-            set;
-        }
-
-        [Option("absolute", HelpText = "Use absolute instead of relative offsets in code disassembly/decompilation. Ignored if -c or -d aren't provided.", MutuallyExclusiveSet = "EXPORT")]
-        public bool AbsoluteAddresses
-        {
-            get;
-            set;
-        }
-
-        [Option("project", HelpText = "Export everything (except -dwhk) to a project-like structure and emit a project file that can be rebuilt.", MutuallyExclusiveSet = "PROJ")]
-        public bool ExportToProject
-        {
-            get;
-            set;
-        }
-
-        [Option("file", Required = true, DefaultValue = "data.win", HelpText = "Specifies the data.win file to export.")]
-        public string File
-        {
-            get;
-            set;
-        }
-        [Option("out", HelpText = "Specifies the output folder.")]
-        public string OutputDirectory
-        {
-            get;
-            set;
-        }
-
-        [Option('k', "dumpunk", HelpText = "Dumps the contents of unknown chunks. (NOTE: dumps them as binary files *with* chunk header. You'll need a hex editor of some sort to make something useful out of it)", MutuallyExclusiveSet = "EXPORT")]
-        public bool DumpUnknownChunks
-        {
-            get;
-            set;
-        }
-        [Option("dumpempty", HelpText = "Dumps the contents of unknown empty chunks, too.", MutuallyExclusiveSet = "EXPORT")]
-        public bool DumpEmptyChunks
-        {
-            get;
-            set;
-        }
-        [Option("dumpall", HelpText = "Dumps *ALL* chunks, does not imply --dumpempty. (NOTE: see note of --dumpunk)", MutuallyExclusiveSet = "EXPORT")]
-        public bool DumpAllChunks
-        {
-            get;
-            set;
-        }
-
-        [Option('q', "quiet", HelpText = "Does not output any info on progress.")]
-        public bool Quiet
-        {
-            get;
-            set;
-        }
-        [Option("noprecprog", HelpText = "Doesn't output precise progress on large chunks.")]
-        public bool NoPrecProg
-        {
-            get;
-            set;
-        }
-
-        [Option("detachedagrp", HelpText = "Export data from detached audio group files, too. These files must reside in the same directory as the input file, and must be called 'audiogroup${n}.dat'.")]
-        public bool DetachedAgrp
-        {
-            get;
-            set;
-        }
-
-        [Option("dumptpagpng", HelpText = "Dump all separate TPAG entries as PNGs. (Note: you probably want --dumpspritepng.)")]
-        public bool DumpTPagPNGs
-        {
-            get;
-            set;
-        }
-        [Option("dumpspritepng", HelpText = "Dump all separate SPRT entries as PNGs.")]
-        public bool DumpSpritePNGs
-        {
-            get;
-            set;
-        }
-
-        [HelpOption]
-        public string GetUsage() => HelpText.AutoBuild(this, current => HelpText.DefaultParsingErrorsHandler(this, current));
+        public bool General { get; set; }
+        public bool Options { get; set; }
+        public bool Sound { get; set; }
+        public bool Sprite { get; set; }
+        public bool Background { get; set; }
+        public bool Path { get; set; }
+        public bool Script { get; set; }
+        public bool Font { get; set; }
+        public bool Object { get; set; }
+        public bool Room { get; set; }
+        public bool TPag { get; set; }
+        public bool Texture { get; set; }
+        public bool Audio { get; set; }
+        public bool Decompile { get; set; }
+        public bool Disassemble { get; set; }
+        public bool String { get; set; }
+        public bool Variables { get; set; }
+        public bool Functions { get; set; }
+        public bool AudioGroups { get; set; }
+        public bool Shader { get; set; }
+        public bool Any { get; set; }
+        public bool AbsoluteAddresses { get; set; }
+        public bool ExportToProject { get; set; }
+        public string File { get; set; } = "data.win";
+        public string OutputDirectory { get; set; }
+        public bool DumpUnknownChunks { get; set; }
+        public bool DumpEmptyChunks { get; set; }
+        public bool DumpAllChunks { get; set; }
+        public bool Quiet { get; set; }
+        public bool NoPrecProg { get; set; }
+        public bool DetachedAgrp { get; set; }
+        public bool DumpTPagPNGs { get; set; }
+        public bool DumpSpritePNGs { get; set; }
     }
+
     class ImportOptions
     {
-        [Option("file", Required = true, HelpText = "Specifies the project file to import.")]
-        public string File
-        {
-            get;
-            set;
-        }
-        [Option("out", Required = true, HelpText = "Specifies the output data.win file.")]
-        public string OutputFile
-        {
-            get;
-            set;
-        }
-    }
-    class Options
-    {
-        [VerbOption("export", HelpText = "Export contents of a data.win file. See export --help for more info.")]
-        public ExportOptions Export
-        {
-            get;
-            set;
-        }
-
-        [VerbOption("import", HelpText = "Recompile an Altar.NET project file to a new data.win file.")]
-        public ImportOptions Import
-        {
-            get;
-            set;
-        }
-
-        [HelpVerbOption]
-        public string GetUsage(string v) => HelpText.AutoBuild(this, v);
+        public string File { get; set; }
+        public string OutputFile { get; set; }
     }
 }

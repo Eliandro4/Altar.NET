@@ -1,8 +1,9 @@
-﻿using Altar.Decomp;
+using Altar.Decomp;
 using Altar.Recomp;
 using Altar.Repack;
 using Altar.Unpack;
-using CommandLine;
+using System.CommandLine;
+using System.CommandLine.Parsing;
 using ImageMagick;
 using LitJson;
 using System;
@@ -16,10 +17,6 @@ using static Altar.SR;
 
 namespace Altar
 {
-    // http://pastebin.com/9t783UNE
-
-    using CLParser = CommandLine.Parser;
-
     unsafe static class Program
     {
         static bool quiet, nopp;
@@ -73,7 +70,7 @@ namespace Altar
         {
             var file = Path.GetFullPath(String.IsNullOrEmpty(eo.File) ? DATA_WIN : eo.File);
 
-            try // see #17
+            try
             {
                 int i = Console.CursorLeft;
                 i = i-- + 1;
@@ -86,7 +83,7 @@ namespace Altar
             if (Directory.Exists(file) && !File.Exists(file))
                 file += Path.DirectorySeparatorChar + DATA_WIN;
             if (!File.Exists(file))
-                throw new ParserException("File \"" + file + "\" not found.");
+                throw new FileNotFoundException("File \"" + file + "\" not found.");
 
             var od = (String.IsNullOrEmpty(eo.OutputDirectory) ? Path.GetDirectoryName(file) : eo.OutputDirectory) + Path.DirectorySeparatorChar;
 
@@ -130,7 +127,6 @@ namespace Altar
                 quiet=eo.Quiet;
                 nopp=eo.NoPrecProg;
 
-                // ---
                 #region GEN8
                 if (eo.General && f.Content.General != null)
                 {
@@ -267,7 +263,7 @@ namespace Altar
 
                     foreach (var s in f.Sound)
                         if ((s.IsEmbedded || s.IsCompressed) && s.AudioID != -1
-                                && s.GroupID == 0) // not from audiogroup$n.dat
+                                && s.GroupID == 0)
                             infoTable[s.AudioID] = s;
 
                     if (!Directory.Exists(od + DIR_WAV))
@@ -321,20 +317,6 @@ namespace Altar
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Code.Length + C_PAREN);
 
                         File.WriteAllText(od + DIR_CODE + f.Code[i].Name + EXT_GML_ASM, Disassembler.DisplayInstructions(f, i, eo.AbsoluteAddresses));
-
-                        /*
-                        // Dump binary code to separate files. Useful for debugging de-/re-assembly/de-/re-compilation.
-                        BinBuffer bb = new BinBuffer();
-                        for (uint j = 0; j < f.Code[i].Instructions.Length; j++)
-                        {
-                            var instr = f.Code[i].Instructions[j];
-                            var isize = DisasmExt.Size(instr, f.General.BytecodeVersion)*4;
-
-                            bb.Write((IntPtr)instr, (int)isize);
-                        }
-                        bb.Position = 0;
-                        File.WriteAllBytes(od + DIR_CODE + f.Code[i].Name + EXT_BIN, bb.ReadBytes(bb.Size));
-                        */
                     }
                     Console.WriteLine();
                 }
@@ -569,8 +551,6 @@ namespace Altar
                     if (eo.DumpAllChunks)
                         chunks.AddRange(c.Chunks.Values);
 
-                    // TODO: how to filter out unknowns?
-
                     for (int i = 0; i < chunks.Count; i++)
                         DumpUnk(chunks[i]);
                 }
@@ -593,43 +573,6 @@ namespace Altar
                     }
             }
         }
-
-        // EXTN: SectionCountOffset<Extension>
-        // {
-        //     STRG*
-        //     STRG*
-        //     STRG*
-        //     CountOffsetList<T>
-        //     {
-        //         STRG*
-        //     }
-        //     STRG*
-        //     STRG*
-        //     int32 02 00 00 00
-        //
-        //     CountOffsetList<T>
-        //     {
-        //         // 01
-        //         STRG** (1)
-        //         int32 10 04 00 00 (offset?)
-        //         STRG*  (1)
-        //         int32 01 00 00 00
-        //         int32 0C 00 00 00
-        //         int32 02 00 00 00
-        //
-        //         // 02
-        //         STRG*
-        //         int32 00 00 00 00
-        //         STRG*
-        //         int32 02 00 00 00
-        //         int32 0C 00 00 00
-        //         int32 02 00 00 00
-        //     }
-        //
-        //     STRG*
-        //     int32 00 00 00 00
-        //     int32[4] 66 82 4C A8  69 1E 7C 85  5B 70 AC 11  67 C0 D2 D5 // WTF? hash?
-        // }
 
         static void Import(ImportOptions opt)
         {
@@ -741,7 +684,6 @@ namespace Altar
                     case SectionHeaders.Strings:
                         var stringOffsets = stringsChunkBuilder.WriteStringsChunk(chunk);
                         stringsDataPosition = writer.Buffer.Position + stringOffsets[0] + 12;
-                        // for Textures chunk up next
                         SectionWriter.Pad(chunk, 0x80, writer.Buffer.Position + 8);
                         break;
                     case SectionHeaders.Textures:
@@ -829,7 +771,6 @@ namespace Altar
             {
                 writer.Buffer.Position = stringOffset;
                 var o = writer.Buffer.ReadInt32();
-                //bb.Position -= sizeof(int);
                 writer.Buffer.Write(o + stringsDataPosition);
             }
 
@@ -837,7 +778,6 @@ namespace Altar
             {
                 writer.Buffer.Position = texpOffset;
                 var o = writer.Buffer.ReadInt32();
-                //bb.Position -= sizeof(int);
                 writer.Buffer.Write(o + texpChunkPosition);
             }
 
@@ -845,7 +785,6 @@ namespace Altar
             {
                 writer.Buffer.Position = codeOffset;
                 var o = writer.Buffer.ReadInt32();
-                //bb.Position -= sizeof(int);
                 writer.Buffer.Write(o + codeChunkPosition);
             }
 
@@ -853,37 +792,183 @@ namespace Altar
             return writer.Buffer.ReadBytes(writer.Buffer.Size);
         }
 
-        [STAThread]
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             Thread.CurrentThread.CurrentUICulture = Thread.CurrentThread.CurrentCulture =
                 CultureInfo.InvariantCulture;
 
-            var o = new Options();
-            CLParser.Default.ParseArgumentsStrict(args, o, (verb, vo) =>
+            var fileOption = new Option<string>("--file")
             {
-                if (vo == null)
-                    return;
+                Description = "Specifies the data.win file to export."
+            };
+            var outOption = new Option<string>("--out")
+            {
+                Description = "Specifies the output folder."
+            };
+            var generalOption = new Option<bool>("--general");
+            var optionsOption = new Option<bool>("--options");
+            var soundOption = new Option<bool>("--sound");
+            var spriteOption = new Option<bool>("--sprite");
+            var backgroundOption = new Option<bool>("--background");
+            var pathOption = new Option<bool>("--path");
+            var scriptOption = new Option<bool>("--script");
+            var fontOption = new Option<bool>("--font");
+            var objectOption = new Option<bool>("--object");
+            var roomOption = new Option<bool>("--room");
+            var tpagOption = new Option<bool>("--tpag");
+            var textureOption = new Option<bool>("--texture");
+            var audioOption = new Option<bool>("--audio");
+            var decompileOption = new Option<bool>("--decompile");
+            var disassembleOption = new Option<bool>("--disassemble");
+            var stringsOption = new Option<bool>("--strings");
+            var variablesOption = new Option<bool>("--variables");
+            var functionsOption = new Option<bool>("--functions");
+            var audiogroupsOption = new Option<bool>("--audiogroups");
+            var shadersOption = new Option<bool>("--shaders");
+            var anyOption = new Option<bool>("--any");
+            var absoluteOption = new Option<bool>("--absolute");
+            var projectOption = new Option<bool>("--project");
+            var dumpunkOption = new Option<bool>("--dumpunk");
+            var dumpemptyOption = new Option<bool>("--dumpempty");
+            var dumpallOption = new Option<bool>("--dumpall");
+            var quietOption = new Option<bool>("--quiet");
+            var noprecprogOption = new Option<bool>("--noprecprog");
+            var detachedagrpOption = new Option<bool>("--detachedagrp");
+            var dumptpagpngOption = new Option<bool>("--dumptpagpng");
+            var dumpspritepngOption = new Option<bool>("--dumpspritepng");
 
+            var exportCommand = new Command("export", "Export contents of a data.win file.")
+            {
+                fileOption,
+                outOption,
+                generalOption,
+                optionsOption,
+                soundOption,
+                spriteOption,
+                backgroundOption,
+                pathOption,
+                scriptOption,
+                fontOption,
+                objectOption,
+                roomOption,
+                tpagOption,
+                textureOption,
+                audioOption,
+                decompileOption,
+                disassembleOption,
+                stringsOption,
+                variablesOption,
+                functionsOption,
+                audiogroupsOption,
+                shadersOption,
+                anyOption,
+                absoluteOption,
+                projectOption,
+                dumpunkOption,
+                dumpemptyOption,
+                dumpallOption,
+                quietOption,
+                noprecprogOption,
+                detachedagrpOption,
+                dumptpagpngOption,
+                dumpspritepngOption,
+            };
+
+            var importFileOption = new Option<string>("--file")
+            {
+                Description = "Specifies the project file to import."
+            };
+            var importOutOption = new Option<string>("--out")
+            {
+                Description = "Specifies the output data.win file."
+            };
+
+            var importCommand = new Command("import", "Recompile an Altar.NET project file to a new data.win file.")
+            {
+                importFileOption,
+                importOutOption,
+            };
+
+            var rootCommand = new RootCommand("Altar.NET - Extract and repack GameMaker Studio data files.")
+            {
+                exportCommand,
+                importCommand,
+            };
+
+            exportCommand.SetAction(parseResult =>
+            {
                 try
                 {
-                    switch (verb)
+                    var eo = new ExportOptions
                     {
-                        case "export":
-                            Export((ExportOptions)vo);
-                            break;
-                        case "import":
-                            Import((ImportOptions)vo);
-                            break;
-                    }
+                        File = parseResult.GetValue(fileOption) ?? "data.win",
+                        OutputDirectory = parseResult.GetValue(outOption),
+                        General = parseResult.GetValue(generalOption),
+                        Options = parseResult.GetValue(optionsOption),
+                        Sound = parseResult.GetValue(soundOption),
+                        Sprite = parseResult.GetValue(spriteOption),
+                        Background = parseResult.GetValue(backgroundOption),
+                        Path = parseResult.GetValue(pathOption),
+                        Script = parseResult.GetValue(scriptOption),
+                        Font = parseResult.GetValue(fontOption),
+                        Object = parseResult.GetValue(objectOption),
+                        Room = parseResult.GetValue(roomOption),
+                        TPag = parseResult.GetValue(tpagOption),
+                        Texture = parseResult.GetValue(textureOption),
+                        Audio = parseResult.GetValue(audioOption),
+                        Decompile = parseResult.GetValue(decompileOption),
+                        Disassemble = parseResult.GetValue(disassembleOption),
+                        String = parseResult.GetValue(stringsOption),
+                        Variables = parseResult.GetValue(variablesOption),
+                        Functions = parseResult.GetValue(functionsOption),
+                        AudioGroups = parseResult.GetValue(audiogroupsOption),
+                        Shader = parseResult.GetValue(shadersOption),
+                        Any = parseResult.GetValue(anyOption),
+                        AbsoluteAddresses = parseResult.GetValue(absoluteOption),
+                        ExportToProject = parseResult.GetValue(projectOption),
+                        DumpUnknownChunks = parseResult.GetValue(dumpunkOption),
+                        DumpEmptyChunks = parseResult.GetValue(dumpemptyOption),
+                        DumpAllChunks = parseResult.GetValue(dumpallOption),
+                        Quiet = parseResult.GetValue(quietOption),
+                        NoPrecProg = parseResult.GetValue(noprecprogOption),
+                        DetachedAgrp = parseResult.GetValue(detachedagrpOption),
+                        DumpTPagPNGs = parseResult.GetValue(dumptpagpngOption),
+                        DumpSpritePNGs = parseResult.GetValue(dumpspritepngOption),
+                    };
+                    Export(eo);
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine($"An error occured during {verb}");
+                    Console.Error.WriteLine("An error occured during export");
                     Console.Error.WriteLine(e);
+                    return 1;
                 }
                 Console.WriteLine("Done");
+                return 0;
             });
+
+            importCommand.SetAction(parseResult =>
+            {
+                try
+                {
+                    var opt = new ImportOptions
+                    {
+                        File = parseResult.GetValue(importFileOption),
+                        OutputFile = parseResult.GetValue(importOutOption),
+                    };
+                    Import(opt);
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine("An error occured during import");
+                    Console.Error.WriteLine(e);
+                    return 1;
+                }
+                Console.WriteLine("Done");
+                return 0;
+            });
+
+            return rootCommand.Parse(args).Invoke();
         }
     }
 }
