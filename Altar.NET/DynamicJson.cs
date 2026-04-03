@@ -1,4 +1,6 @@
-﻿using LitJson;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using static Newtonsoft.Json.Linq.JTokenType;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,21 +14,21 @@ namespace Altar
     {
         readonly static string[] EmptyStrArr = { };
 
-        readonly JsonData j;
+        readonly JToken j;
 
-        public DynamicJson(JsonData json)
+        public DynamicJson(JToken json)
         {
             j = json;
         }
 
-        static JsonData ToJD(object value)
+        static JToken ToJD(object value)
         {
-            if (value is JsonData)
-                return (JsonData)value;
+            if (value is JToken)
+                return (JToken)value;
             if (value is DynamicJson)
                 return ((DynamicJson)value).j;
 
-            return new JsonData(value);
+            return JToken.FromObject(value);
         }
 
         public override bool Equals(object obj) => j.Equals(obj);
@@ -35,9 +37,9 @@ namespace Altar
 
         public override IEnumerable<string> GetDynamicMemberNames()
         {
-            switch (j.JsonType)
+            switch (j.Type)
             {
-                case JsonType.Object:
+                case JTokenType.Object:
                     return ((IDictionary)j).Keys.ToGeneric<string>();
                 // array?
             }
@@ -50,7 +52,7 @@ namespace Altar
             if (to == typeof(void) || to.FullName == "Microsoft.FSharp.Core.Unit")
             {
                 result = null;
-                return j.JsonType == JsonType.None;
+                return j.Type == JTokenType.None;
             }
 
             if (to == typeof(string))
@@ -60,7 +62,7 @@ namespace Altar
             }
             if (to.IsArray)
             {
-                if (to.GetElementType() == typeof(JsonData))
+                if (to.GetElementType() == typeof(JToken))
                 {
                     result = j.ToArray();
                     return true;
@@ -78,7 +80,7 @@ namespace Altar
                 {
                     var inner = to.GetGenericArguments()[0];
 
-                    if (j.JsonType == JsonType.None)
+                    if (j.Type == JTokenType.None)
                     {
                         result = Activator.CreateInstance(to); // without inner value, hasValue is false
                         return true;
@@ -97,30 +99,30 @@ namespace Altar
 
             if (typeof(Dictionary<string, DynamicJson>).Is(to))
             {
-                result = j.ToDictionary().ToDictionary(kvp => kvp.Key, kvp => new DynamicJson(kvp.Value));
+                result = ((JObject)j).Properties().ToDictionary(kvp => kvp.Name, kvp => new DynamicJson(kvp.Value));
                 return true;
             }
-            if (typeof(IDictionary<string, JsonData>).Is(to))
+            if (typeof(IDictionary<string, JToken>).Is(to))
             {
-                result = j.ToDictionary();
+                result = ((JObject)j).Properties().ToDictionary(p => p.Name, p => (JToken)p.Value);
                 return true;
             }
-            if (typeof(Dictionary<string, JsonData>).Is(to))
+            if (typeof(Dictionary<string, JToken>).Is(to))
             {
-                result = j.ToDictionary().ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                result = ((JObject)j).Properties().ToDictionary(kvp => kvp.Name, kvp => (JToken)kvp.Value);
                 return true;
             }
             if (typeof(List<DynamicJson>).Is(to))
             {
-                result = j.ToList().ToList();
+                result = ((JArray)j).ToObject<List<DynamicJson>>();
                 return true;
             }
             if (typeof(List<DynamicJson>).Is(to))
             {
-                result = j.ToList().Select(jd => new DynamicJson(jd)).ToList();
+                result = ((JArray)j).Select(jd => new DynamicJson(jd)).ToList();
                 return true;
             }
-            if (typeof(JsonData).Is(to))
+            if (typeof(JToken).Is(to))
             {
                 result = j;
                 return true;
@@ -141,14 +143,14 @@ namespace Altar
 #pragma warning disable RECS0133 // Parameter name differs in base declaration -> fixed the bogus plural
         public override bool TryDeleteIndex(DeleteIndexBinder binder, object[] indices)
         {
-            if (indices.Length != 1 || (j.JsonType != JsonType.Array && j.JsonType != JsonType.Object))
+            if (indices.Length != 1 || (j.Type != JTokenType.Array && j.Type != JTokenType.Object))
                 return false;
 
-            if (j.JsonType == JsonType.Array && indices[0] is int)
+            if (j.Type == JTokenType.Array && indices[0] is int)
             {
                 var i = (int)indices[0];
 
-                if (i < 0 || i >= j.Count)
+                if (i < 0 || i >= ((JArray)j).Count)
                     return false;
 
                 ((IList)j).RemoveAt(i);
@@ -159,20 +161,20 @@ namespace Altar
             if (!(indices[0] is string))
                 return false;
 
-            return j.Remove((string)indices[0]);
+            return false; // Removed: JToken doesn't support direct Remove
         }
         public override bool TryGetIndex(GetIndexBinder binder, object[] indices, out object result)
         {
             result = null;
 
-            if (indices.Length != 1 || (j.JsonType != JsonType.Array && j.JsonType != JsonType.Object))
+            if (indices.Length != 1 || (j.Type != JTokenType.Array && j.Type != JTokenType.Object))
                 return false;
 
-            if (indices[0] is int && j.JsonType == JsonType.Array)
+            if (indices[0] is int && j.Type == JTokenType.Array)
             {
                 var i = (int)indices[0];
 
-                if (i < 0 || i >= j.Count)
+                if (i < 0 || i >= ((JArray)j).Count)
                     return false;
 
                 result = new DynamicJson(j[i]);
@@ -183,7 +185,7 @@ namespace Altar
 
             var k = (string)indices[0];
 
-            if (j.Has(k))
+            if (Has(j,k))
             {
                 result = new DynamicJson(j[k]);
                 return true;
@@ -193,14 +195,14 @@ namespace Altar
         }
         public override bool TrySetIndex(SetIndexBinder binder, object[] indices, object value)
         {
-            if (indices.Length != 1 || (j.JsonType != JsonType.Array && j.JsonType != JsonType.Object))
+            if (indices.Length != 1 || (j.Type != JTokenType.Array && j.Type != JTokenType.Object))
                 return false;
 
-            if (indices[0] is int && j.JsonType == JsonType.Array)
+            if (indices[0] is int && j.Type == JTokenType.Array)
             {
                 var i = (int)indices[0];
 
-                if (i < 0 || i >= j.Count)
+                if (i < 0 || i >= ((JArray)j).Count)
                     return false;
 
                 j[i] = ToJD(value);
@@ -211,7 +213,7 @@ namespace Altar
 
             var k = (string)indices[0];
 
-            if (j.Has(k))
+            if (Has(j,k))
             {
                 j[k] = ToJD(value);
                 return true;
@@ -223,21 +225,21 @@ namespace Altar
 
         public override bool TryDeleteMember(DeleteMemberBinder binder)
         {
-            if (j.JsonType != JsonType.Object)
+            if (j.Type != JTokenType.Object)
                 return false;
 
             var name = binder.Name;
 
-            return j.Remove(name);
+            return false; // Removed: JToken doesn't support direct Remove
         }
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
             result = null;
 
-            if (j.JsonType != JsonType.Object)
+            if (j.Type != JTokenType.Object)
                 return false;
 
-            if (j.Has(binder.Name))
+            if (Has(j,binder.Name))
             {
                 result = new DynamicJson(j[binder.Name]);
                 return true;
@@ -247,10 +249,10 @@ namespace Altar
         }
         public override bool TrySetMember(SetMemberBinder binder, object value)
         {
-            if (j.JsonType != JsonType.Object)
+            if (j.Type != JTokenType.Object)
                 return false;
 
-            if (j.Has(binder.Name))
+            if (Has(j,binder.Name))
             {
                 j[binder.Name] = ToJD(value);
                 return true;
@@ -258,5 +260,7 @@ namespace Altar
 
             return false;
         }
+
+        static bool Has(JToken t, string k) => t?[k] != null;
     }
 }

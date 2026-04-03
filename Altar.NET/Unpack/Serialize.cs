@@ -1,4 +1,5 @@
-﻿using LitJson;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -9,24 +10,24 @@ namespace Altar.Unpack
     {
         // not using the DynamicJson here -> greater perf
 
-        static JsonData CreateObj() => JsonMapper.ToObject(SR.EMPTY_OBJ);
-        static JsonData CreateArr() => JsonMapper.ToObject(SR.BRACKETS );
+        static JToken CreateObj() => JToken.Parse("{}");
+        static JToken CreateArr() => JToken.Parse("[]");
 
-        static JsonData SerializeArray<T, TRet>(IEnumerable<T> coll, Func<T, TRet> converter)
+        static JToken SerializeArray<T, TRet>(IEnumerable<T> coll, Func<T, TRet> converter)
         {
             if (coll      == null)
                 throw new ArgumentNullException(nameof(coll     ));
             if (converter == null)
                 throw new ArgumentNullException(nameof(converter));
 
-            var r = CreateArr();
+            var r = (JArray)CreateArr();
 
             foreach (var t in coll) r.Add(converter(t));
 
             return r;
         }
 
-        static JsonData SerializePoint(Point   p)
+        static JToken SerializePoint(Point   p)
         {
             var r = CreateObj();
 
@@ -35,7 +36,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        static JsonData SerializePoint(PointF  p)
+        static JToken SerializePoint(PointF  p)
         {
             var r = CreateObj();
 
@@ -44,7 +45,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        static JsonData SerializePoint(Point16 p)
+        static JToken SerializePoint(Point16 p)
         {
             var r = CreateObj();
 
@@ -53,7 +54,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        static JsonData SerializeSize (Point   p)
+        static JToken SerializeSize (Point   p)
         {
             var r = CreateObj();
 
@@ -62,7 +63,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        static JsonData SerializeSize (PointF  p)
+        static JToken SerializeSize (PointF  p)
         {
             var r = CreateObj();
 
@@ -71,7 +72,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        static JsonData SerializeSize (Point16 p)
+        static JToken SerializeSize (Point16 p)
         {
             var r = CreateObj();
 
@@ -80,7 +81,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        static JsonData SerializeRect (Rectangle    r)
+        static JToken SerializeRect (Rectangle    r)
         {
             var ret = CreateObj();
 
@@ -91,7 +92,7 @@ namespace Altar.Unpack
 
             return ret;
         }
-        static JsonData SerializeRect (Rectangle16  r)
+        static JToken SerializeRect (Rectangle16  r)
         {
             var ret = CreateObj();
 
@@ -102,7 +103,7 @@ namespace Altar.Unpack
 
             return ret;
         }
-        static JsonData SerializeRect (BoundingBox  r)
+        static JToken SerializeRect (BoundingBox  r)
         {
             var ret = CreateObj();
 
@@ -113,7 +114,7 @@ namespace Altar.Unpack
 
             return ret;
         }
-        static JsonData SerializeRect (BoundingBox2 r)
+        static JToken SerializeRect (BoundingBox2 r)
         {
             var ret = CreateObj();
 
@@ -124,7 +125,7 @@ namespace Altar.Unpack
 
             return ret;
         }
-        static JsonData SerializePoint(PathPoint p)
+        static JToken SerializePoint(PathPoint p)
         {
             var r = CreateObj();
 
@@ -134,7 +135,7 @@ namespace Altar.Unpack
             return r;
         }
 
-        static JsonData SerializeFontChar  (FontCharacter c)
+        static JToken SerializeFontChar  (FontCharacter c)
         {
             var e = CreateObj();
 
@@ -145,7 +146,7 @@ namespace Altar.Unpack
 
             return e;
         }
-        static JsonData SerializeObjPhysics(ObjectPhysics p)
+        static JToken SerializeObjPhysics(ObjectPhysics p)
         {
             var r = CreateObj();
 
@@ -162,7 +163,7 @@ namespace Altar.Unpack
             return r;
         }
 
-        static JsonData SerializeRoomBg  (RoomBackground bg  , LazyArray<BackgroundInfo> bgs )
+        static JToken SerializeRoomBg  (RoomBackground bg  , LazyArray<BackgroundInfo> bgs )
         {
             var r = CreateObj();
 
@@ -179,7 +180,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        static JsonData SerializeRoomView(RoomView       view, LazyArray<ObjectInfo> objs)
+        static JToken SerializeRoomView(RoomView       view, LazyArray<ObjectInfo> objs)
         {
             var r = CreateObj();
 
@@ -194,7 +195,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        static JsonData SerializeRoomObj (RoomObject     obj , LazyArray<ObjectInfo> objs)
+        static JToken SerializeRoomObj (RoomObject     obj , LazyArray<ObjectInfo> objs)
         {
             var r = CreateObj();
 
@@ -211,7 +212,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        static JsonData SerializeRoomTile(RoomTile       tile, LazyArray<BackgroundInfo> bgs )
+        static JToken SerializeRoomTile(RoomTile       tile, LazyArray<BackgroundInfo> bgs )
         {
             var r = CreateObj();
 
@@ -230,7 +231,7 @@ namespace Altar.Unpack
             return r;
         }
 
-        static JsonData SerializeRoomObjInst(RoomObjInst oi)
+        static JToken SerializeRoomObjInst(RoomObjInst oi)
         {
             var r = CreateObj();
             r["name"     ] = oi.Name;
@@ -242,10 +243,10 @@ namespace Altar.Unpack
             return r;
         }
 
-        static JsonData SerializeColMask(bool[,] colMask)
+        static JToken SerializeColMask(bool[,] colMask)
         {
-            var j = CreateObj();
-            var a = CreateArr();
+            var j = (JObject)CreateObj();
+            var a = (JArray)CreateArr();
 
             int w = colMask.GetLength(0),
                 h = colMask.GetLength(1);
@@ -255,7 +256,7 @@ namespace Altar.Unpack
 
             for (int y = 0; y < h; y++)
             {
-                var l = CreateArr();
+                var l = (JArray)CreateArr();
 
                 for (int x = 0; x < w; x++)
                     l.Add(colMask[x, y]);
@@ -268,7 +269,7 @@ namespace Altar.Unpack
             return j;
         }
 
-        public static JsonData SerializeGeneral(GeneralInfo gen8)
+        public static JToken SerializeGeneral(GeneralInfo gen8)
         {
             var r = CreateObj();
 
@@ -294,7 +295,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializeOptions(OptionInfo  optn)
+        public static JToken SerializeOptions(OptionInfo  optn)
         {
             var r = CreateObj();
 
@@ -310,7 +311,7 @@ namespace Altar.Unpack
             return r;
         }
 
-        public static JsonData SerializeSound (SoundInfo      sond)
+        public static JToken SerializeSound (SoundInfo      sond)
         {
             var r = CreateObj();
 
@@ -325,7 +326,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializeSprite(SpriteInfo     sprt)
+        public static JToken SerializeSprite(SpriteInfo     sprt)
         {
             var r = CreateObj();
 
@@ -346,7 +347,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializeBg    (BackgroundInfo bgnd)
+        public static JToken SerializeBg    (BackgroundInfo bgnd)
         {
             var r = CreateObj();
 
@@ -354,7 +355,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializePath  (PathInfo       path)
+        public static JToken SerializePath  (PathInfo       path)
         {
             var r = CreateObj();
 
@@ -365,7 +366,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializeScript(ScriptInfo     scpt, LazyArray<CodeInfo> code)
+        public static JToken SerializeScript(ScriptInfo     scpt, LazyArray<CodeInfo> code)
         {
             var r = CreateObj();
 
@@ -373,7 +374,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializeFont  (FontInfo       font)
+        public static JToken SerializeFont  (FontInfo       font)
         {
             var r = CreateObj();
 
@@ -391,7 +392,7 @@ namespace Altar.Unpack
             return r;
         }
 
-        public static JsonData SerializeObj   (ObjectInfo objt, LazyArray<SpriteInfo> sprites, LazyArray<ObjectInfo> objs)
+        public static JToken SerializeObj   (ObjectInfo objt, LazyArray<SpriteInfo> sprites, LazyArray<ObjectInfo> objs)
         {
             var r = CreateObj();
 
@@ -419,7 +420,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializeRoom  (RoomInfo room, LazyArray<BackgroundInfo> bgs, LazyArray<ObjectInfo> objs)
+        public static JToken SerializeRoom  (RoomInfo room, LazyArray<BackgroundInfo> bgs, LazyArray<ObjectInfo> objs)
         {
             var r = CreateObj();
 
@@ -448,7 +449,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializeTPag  (TexturePageInfo tpag)
+        public static JToken SerializeTPag  (TexturePageInfo tpag)
         {
             var r = CreateObj();
 
@@ -459,7 +460,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializeShaderProgramSource(ShaderProgramSource src)
+        public static JToken SerializeShaderProgramSource(ShaderProgramSource src)
         {
             var r = CreateObj();
 
@@ -468,7 +469,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializeShaderCode(ShaderCode shaderCode)
+        public static JToken SerializeShaderCode(ShaderCode shaderCode)
         {
             var r = CreateObj();
 
@@ -479,7 +480,7 @@ namespace Altar.Unpack
 
             return r;
         }
-        public static JsonData SerializeShader(ShaderInfo shdr)
+        public static JToken SerializeShader(ShaderInfo shdr)
         {
             var r = CreateObj();
 
@@ -490,10 +491,10 @@ namespace Altar.Unpack
             return r;
         }
 
-        public static JsonData SerializeStrings(GMFile f) => SerializeArray(f.Strings, Utils.Identity);
-        public static JsonData SerializeAudioGroups(GMFile f) => SerializeArray(f.AudioGroups, Utils.Identity);
+        public static JToken SerializeStrings(GMFile f) => SerializeArray(f.Strings, Utils.Identity);
+        public static JToken SerializeAudioGroups(GMFile f) => SerializeArray(f.AudioGroups, Utils.Identity);
 
-        private static JsonData SerializeFuncLocalsInfo(FunctionLocalsInfo fli)
+        private static JToken SerializeFuncLocalsInfo(FunctionLocalsInfo fli)
         {
             var r = CreateObj();
 
@@ -503,11 +504,11 @@ namespace Altar.Unpack
             return r;
         }
 
-        private static JsonData SerializeReferenceDef(ReferenceDef rd)
+        private static JToken SerializeReferenceDef(ReferenceDef rd)
         {
             if (!rd.HasExtra)
             {
-                return new JsonData(rd.Name);
+                return new JValue(rd.Name);
             }
             var r = CreateObj();
 
@@ -525,7 +526,7 @@ namespace Altar.Unpack
             return r;
         }
 
-        public static JsonData SerializeVars(GMFile f)
+        public static JToken SerializeVars(GMFile f)
         {
             var r = CreateObj();
 
@@ -535,7 +536,7 @@ namespace Altar.Unpack
             return r;
         }
 
-        public static JsonData SerializeFuncs(GMFile f) {
+        public static JToken SerializeFuncs(GMFile f) {
             var r = CreateObj();
 
             r["functions"] = SerializeArray(f.RefData.Functions, SerializeReferenceDef);
@@ -544,7 +545,7 @@ namespace Altar.Unpack
             return r;
         }
 
-        public unsafe static JsonData SerializeProject(GMFile f, ExportOptions eo, List<IntPtr> chunks = null)
+        public unsafe static JToken SerializeProject(GMFile f, ExportOptions eo, List<IntPtr> chunks = null)
         {
             var r = CreateObj();
 
@@ -563,14 +564,14 @@ namespace Altar.Unpack
             {
                 r["textures"] = CreateArr();
                 for (int i = 0; i < f.Textures.Length; i++)
-                    r["textures"].Add(SR.DIR_TEX + i.ToString(CultureInfo.InvariantCulture) + SR.EXT_PNG);
+                    ((JArray)r["textures"]).Add(SR.DIR_TEX + i.ToString(CultureInfo.InvariantCulture) + SR.EXT_PNG);
             }
 
             if (eo.TPag)
             {
                 r["tpags"] = CreateArr();
                 for (int i = 0; i < f.TexturePages.Length; i++)
-                    r["tpags"].Add(SR.DIR_TXP + i.ToString(CultureInfo.InvariantCulture) + SR.EXT_JSON); 
+                    ((JArray)r["tpags"]).Add(SR.DIR_TXP + i.ToString(CultureInfo.InvariantCulture) + SR.EXT_JSON); 
             }
 
             // ---
@@ -585,7 +586,7 @@ namespace Altar.Unpack
             {
                 r["audio"] = CreateArr();
                 for (int i = 0; i < f.Audio.Length; i++)
-                    r["audio"].Add(SR.DIR_WAV + infoTable[i].Name + SR.EXT_WAV); 
+                    ((JArray)r["audio"]).Add(SR.DIR_WAV + infoTable[i].Name + SR.EXT_WAV); 
             }
 
             if (eo.Disassemble || eo.Decompile)
@@ -594,9 +595,9 @@ namespace Altar.Unpack
                 for (int i = 0; i < f.Code.Length; i++)
                 {
                     if (eo.Disassemble)
-                        r["code"].Add(SR.DIR_CODE + f.Code[i].Name + SR.EXT_GML_ASM);
+                        ((JArray)r["code"]).Add(SR.DIR_CODE + f.Code[i].Name + SR.EXT_GML_ASM);
                     if (eo.Decompile)
-                        r["code"].Add(SR.DIR_CODE + f.Code[i].Name + SR.EXT_GML_LSP);
+                        ((JArray)r["code"]).Add(SR.DIR_CODE + f.Code[i].Name + SR.EXT_GML_LSP);
                 }
             }
 
@@ -622,7 +623,7 @@ namespace Altar.Unpack
                 {
                     var hdr = (SectionHeader*)chunks[i];
                     if (hdr != null && (!hdr->IsEmpty() || eo.DumpEmptyChunks))
-                        r["chunks"].Add(hdr->MagicString() + SR.EXT_BIN);
+                        ((JArray)r["chunks"]).Add(hdr->MagicString() + SR.EXT_BIN);
                 }
             }
 

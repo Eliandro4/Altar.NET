@@ -5,7 +5,8 @@ using Altar.Unpack;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using ImageMagick;
-using LitJson;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -132,7 +133,7 @@ namespace Altar
                 {
                     WriteLine("Exporting manifest file...");
 
-                    File.WriteAllText(od + "general.json", JsonMapper.ToJson(Serialize.SerializeGeneral(f.General)));
+                    File.WriteAllText(od + "general.json", JsonConvert.SerializeObject(Serialize.SerializeGeneral(f.General)));
                 }
                 #endregion
                 #region OPTN
@@ -140,7 +141,7 @@ namespace Altar
                 {
                     WriteLine("Exporting options...");
 
-                    File.WriteAllText(od + "options.json", JsonMapper.ToJson(Serialize.SerializeOptions(f.Options)));
+                    File.WriteAllText(od + "options.json", JsonConvert.SerializeObject(Serialize.SerializeOptions(f.Options)));
                 }
                 #endregion
 
@@ -149,7 +150,7 @@ namespace Altar
                 {
                     WriteLine("Dumping strings...");
 
-                    File.WriteAllText(od + "strings.json", JsonMapper.ToJson(Serialize.SerializeStrings(f)));
+                    File.WriteAllText(od + "strings.json", JsonConvert.SerializeObject(Serialize.SerializeStrings(f)));
                 }
                 #endregion
                 #region VARI
@@ -157,7 +158,7 @@ namespace Altar
                 {
                     WriteLine("Dumping variables...");
 
-                    File.WriteAllText(od + "variables.json", JsonMapper.ToJson(Serialize.SerializeVars(f)));
+                    File.WriteAllText(od + "variables.json", JsonConvert.SerializeObject(Serialize.SerializeVars(f)));
                 }
                 #endregion
                 #region FUNC
@@ -165,7 +166,7 @@ namespace Altar
                 {
                     WriteLine("Dumping functions...");
 
-                    File.WriteAllText(od + "functions.json", JsonMapper.ToJson(Serialize.SerializeFuncs(f)));
+                    File.WriteAllText(od + "functions.json", JsonConvert.SerializeObject(Serialize.SerializeFuncs(f)));
                 }
                 #endregion
                 int cl = 0, ct = 0;
@@ -174,7 +175,7 @@ namespace Altar
                 {
                     WriteLine("Dumping audio groups...");
 
-                    File.WriteAllText(od+"audiogroups.json", JsonMapper.ToJson(Serialize.SerializeAudioGroups(f)));
+                    File.WriteAllText(od+"audiogroups.json", JsonConvert.SerializeObject(Serialize.SerializeAudioGroups(f)));
                 }
                 if (eo.DetachedAgrp && f.AudioGroups != null)
                 {
@@ -335,7 +336,7 @@ namespace Altar
                     {
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Scripts.Length + C_PAREN);
 
-                        File.WriteAllText(od + DIR_SCR + f.Scripts[i].Name + EXT_JSON, JsonMapper.ToJson(Serialize.SerializeScript(f.Scripts[i], f.Code)));
+                        File.WriteAllText(od + DIR_SCR + f.Scripts[i].Name + EXT_JSON, JsonConvert.SerializeObject(Serialize.SerializeScript(f.Scripts[i], f.Code)));
                     }
                     Console.WriteLine();
                     f.Scripts.Clear();
@@ -357,7 +358,7 @@ namespace Altar
 
                         var tpag = f.TexturePages[i];
                         File.WriteAllText(od + DIR_TXP + i + EXT_JSON,
-                                JsonMapper.ToJson(Serialize.SerializeTPag(tpag)));
+                                JsonConvert.SerializeObject(Serialize.SerializeTPag(tpag)));
 
                         var bc = (MagickImage)txtrBitmaps[tpag.SpritesheetId].Clone();
                         bc.Crop(new MagickGeometry(tpag.Source.X, tpag.Source.Y,
@@ -382,7 +383,7 @@ namespace Altar
                     {
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Sprites.Length + C_PAREN);
 
-                        File.WriteAllText(od + DIR_SPR + f.Sprites[i].Name + EXT_JSON, JsonMapper.ToJson(Serialize.SerializeSprite(f.Sprites[i])));
+                        File.WriteAllText(od + DIR_SPR + f.Sprites[i].Name + EXT_JSON, JsonConvert.SerializeObject(Serialize.SerializeSprite(f.Sprites[i])));
 
                         if (eo.DumpSpritePNGs)
                         for (int j = 0; j < f.Sprites[i].TextureIndices.Length; ++j)
@@ -407,7 +408,7 @@ namespace Altar
                     {
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Sound.Length + C_PAREN);
 
-                        File.WriteAllText(od + DIR_SND + f.Sound[i].Name + EXT_JSON, JsonMapper.ToJson(Serialize.SerializeSound(f.Sound[i])));
+                        File.WriteAllText(od + DIR_SND + f.Sound[i].Name + EXT_JSON, JsonConvert.SerializeObject(Serialize.SerializeSound(f.Sound[i])));
                     }
                     Console.WriteLine();
                     f.Sound.Clear();
@@ -426,7 +427,7 @@ namespace Altar
                     {
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Objects.Length + C_PAREN);
 
-                        File.WriteAllText(od + DIR_OBJ + f.Objects[i].Name + EXT_JSON, JsonMapper.ToJson(Serialize.SerializeObj(f.Objects[i], f.Sprites, f.Objects)));
+                        File.WriteAllText(od + DIR_OBJ + f.Objects[i].Name + EXT_JSON, JsonConvert.SerializeObject(Serialize.SerializeObj(f.Objects[i], f.Sprites, f.Objects)));
                     }
                     Console.WriteLine();
                 }
@@ -443,7 +444,7 @@ namespace Altar
                     {
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Backgrounds.Length + C_PAREN);
 
-                        File.WriteAllText(od + DIR_BG + f.Backgrounds[i].Name + EXT_JSON, JsonMapper.ToJson(Serialize.SerializeBg(f.Backgrounds[i])));
+                        File.WriteAllText(od + DIR_BG + f.Backgrounds[i].Name + EXT_JSON, JsonConvert.SerializeObject(Serialize.SerializeBg(f.Backgrounds[i])));
                     }
                     Console.WriteLine();
                 }
@@ -460,7 +461,7 @@ namespace Altar
                     {
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Rooms.Length + C_PAREN);
 
-                        File.WriteAllText(od + DIR_ROOM + f.Rooms[i].Name + EXT_JSON, JsonMapper.ToJson(Serialize.SerializeRoom(f.Rooms[i], f.Backgrounds, f.Objects)));
+                        File.WriteAllText(od + DIR_ROOM + f.Rooms[i].Name + EXT_JSON, JsonConvert.SerializeObject(Serialize.SerializeRoom(f.Rooms[i], f.Backgrounds, f.Objects)));
                     }
                     Console.WriteLine();
                 }
@@ -481,7 +482,7 @@ namespace Altar
                     {
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Fonts.Length + C_PAREN);
 
-                        File.WriteAllText(od + DIR_FNT + f.Fonts[i].CodeName + EXT_JSON, JsonMapper.ToJson(Serialize.SerializeFont(f.Fonts[i])));
+                        File.WriteAllText(od + DIR_FNT + f.Fonts[i].CodeName + EXT_JSON, JsonConvert.SerializeObject(Serialize.SerializeFont(f.Fonts[i])));
                     }
                     Console.WriteLine();
                     f.Fonts.Clear();
@@ -499,7 +500,7 @@ namespace Altar
                     {
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Paths.Length + C_PAREN);
 
-                        File.WriteAllText(od + DIR_PATH + f.Paths[i].Name + EXT_JSON, JsonMapper.ToJson(Serialize.SerializePath(f.Paths[i])));
+                        File.WriteAllText(od + DIR_PATH + f.Paths[i].Name + EXT_JSON, JsonConvert.SerializeObject(Serialize.SerializePath(f.Paths[i])));
                     }
                     Console.WriteLine();
                     f.Paths.Clear();
@@ -517,7 +518,7 @@ namespace Altar
                     {
                         SetCAndWr(cl, ct, O_PAREN + (i + 1) + SLASH + f.Shaders.Length + C_PAREN);
 
-                        File.WriteAllText(od + DIR_SHDR + f.Shaders[i].Name + EXT_JSON, JsonMapper.ToJson(Serialize.SerializeShader(f.Shaders[i])));
+                        File.WriteAllText(od + DIR_SHDR + f.Shaders[i].Name + EXT_JSON, JsonConvert.SerializeObject(Serialize.SerializeShader(f.Shaders[i])));
                     }
                     Console.WriteLine();
                 }
@@ -559,7 +560,7 @@ namespace Altar
                 {
                     WriteLine("Emitting project file...");
 
-                    File.WriteAllText(od + f.General.Name + EXT_JSON, JsonMapper.ToJson(Serialize.SerializeProject(f, eo, chunks)));
+                    File.WriteAllText(od + f.General.Name + EXT_JSON, JsonConvert.SerializeObject(Serialize.SerializeProject(f, eo, chunks)));
                 }
 
                 if (tpagBitmaps != null)
@@ -583,13 +584,13 @@ namespace Altar
 
             var baseDir = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
 
-            JsonData projFile = JsonMapper.ToObject(File.OpenText(file));
+            JToken projFile = JToken.Parse(File.ReadAllText(file));
             GMFile f = Deserialize.ReadFile(baseDir, projFile);
 
             File.WriteAllBytes(Path.GetFullPath(opt.OutputFile), WriteFile(baseDir, projFile, f));
         }
 
-        public static byte[] WriteFile(string baseDir, JsonData projFile, GMFile f)
+        public static byte[] WriteFile(string baseDir, JToken projFile, GMFile f)
         {
             Console.WriteLine($"Preparing strings...");
             var stringsChunkBuilder = new StringsChunkBuilder();
@@ -699,11 +700,11 @@ namespace Altar
                         var chunkName = chunkId.ToChunkName();
                         Console.Error.WriteLine($"Note: Don't know how to handle {chunkName}");
                         string chunkFile = null;
-                        if (projFile.Has("chunks") && projFile["chunks"].IsArray)
+                        if (projFile["chunks"] != null && projFile["chunks"].Type == JTokenType.Array)
                         {
-                            foreach (JsonData jd in projFile["chunks"])
+                            foreach (JToken jd in projFile["chunks"])
                             {
-                                if (jd.IsString)
+                                if (jd.Type == JTokenType.String)
                                 {
                                     if (Path.GetFileNameWithoutExtension((string)jd) == chunkName)
                                     {
